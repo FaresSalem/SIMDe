@@ -1,4 +1,4 @@
-# SIMD Everywhere
+# SIMD Everywhere 
 
 The SIMDe header-only library provides fast, portable implementations of 
 [SIMD intrinsics](https://en.wikipedia.org/wiki/SIMD) on hardware which
