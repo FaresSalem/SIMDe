@@ -51,8 +51,8 @@ implementations using one (or more) of the following:
 For an example of a project using SIMDe, see
 [LZSSE-SIMDe](https://github.com/nemequ/LZSSE-SIMDe).
 
-You can [try SIMDe online](simde.netlify.com/godbolt/demo) using Compiler
-Explorer and an amalgamated SIMDe header.
+You can [try SIMDe online](https://simde.netlify.com/godbolt/demo)
+using Compiler Explorer and an amalgamated SIMDe header.
 
 If you have any questions, please feel free to use the
 [issue tracker](https://github.com/nemequ/simde/issues) or the
@@ -135,9 +135,10 @@ Each instruction set has a separate file; `x86/mmx.h` for MMX,
 the header for whichever instruction set(s) you want, and SIMDe will
 provide the fastest implementation it can given which extensions
 you've enabled in your compiler (i.e., if you want to use NEON to
-implement SSE, you'll need to pass something like `-mfpu=neon`,
-'-mfpu=name' specifies the floating-point hardware or hardware emulation
-that is available on the target, check [GCC ARM-Options](https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html) for more).
+implement SSE, you may need to pass something like `-mfpu=neon`
+or `-march=armv8-a+simd`.  See
+[GCC ARM-Options](https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html)
+for more information).
 
 If you define `SIMDE_ENABLE_NATIVE_ALIASES` before including SIMDe
 you can use the same names as the native functions.  Unfortunately,
