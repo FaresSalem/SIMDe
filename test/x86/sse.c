@@ -36,7 +36,7 @@ test_simde_mm_set_ps(const MunitParameter params[], void* data) {
 
   simde__m128 x = simde_mm_set_ps(d[0], d[1], d[2], d[3]);
 
-  simde_float32* f = (simde_float32*) &x;
+  simde_float32* f = HEDLEY_REINTERPRET_CAST(simde_float32*, &x);
   munit_assert_float(f[0], ==, d[3]);
   munit_assert_float(f[1], ==, d[2]);
   munit_assert_float(f[2], ==, d[1]);
@@ -55,7 +55,7 @@ test_simde_mm_set_ss(const MunitParameter params[], void* data) {
 
   simde__m128 x = simde_mm_set_ss(d);
 
-  simde_float32* f = (simde_float32*) &x;
+  simde_float32* f = HEDLEY_REINTERPRET_CAST(simde_float32*, &x);
   munit_assert_float(f[0], ==, d);
   munit_assert_float(f[1], ==, 0.0f);
   munit_assert_float(f[2], ==, 0.0f);
@@ -74,7 +74,7 @@ test_simde_mm_set1_ps(const MunitParameter params[], void* data) {
 
   simde__m128 x = simde_mm_set1_ps(d);
 
-  simde_float32* f = (simde_float32*) &x;
+  simde_float32* f = HEDLEY_REINTERPRET_CAST(simde_float32*, &x);
   munit_assert_float(f[0], ==, d);
   munit_assert_float(f[1], ==, d);
   munit_assert_float(f[2], ==, d);
@@ -93,7 +93,7 @@ test_simde_mm_setr_ps(const MunitParameter params[], void* data) {
 
   simde__m128 x = simde_mm_setr_ps(d[3], d[2], d[1], d[0]);
 
-  simde_float32* f = (simde_float32*) &x;
+  simde_float32* f = HEDLEY_REINTERPRET_CAST(simde_float32*, &x);
   munit_assert_float(f[0], ==, d[3]);
   munit_assert_float(f[1], ==, d[2]);
   munit_assert_float(f[2], ==, d[1]);
@@ -109,7 +109,7 @@ test_simde_mm_setzero_ps(const MunitParameter params[], void* data) {
 
   simde__m128 r = simde_mm_setzero_ps();
 
-  simde_float32* f = (simde_float32*) &r;
+  simde_float32* f = HEDLEY_REINTERPRET_CAST(simde_float32*, &r);
   munit_assert_float(f[0], ==, 0.0f);
   munit_assert_float(f[1], ==, 0.0f);
   munit_assert_float(f[2], ==, 0.0f);
@@ -1983,16 +1983,16 @@ test_simde_mm_cvtpi32_ps(const MunitParameter params[], void* data) {
     simde__m128_private a, r;
     simde__m64_private b;
 
-    munit_rand_memory(sizeof(a), (uint8_t*) &a);
+    munit_rand_memory(sizeof(a), HEDLEY_REINTERPRET_CAST(uint8_t*, &a));
     for (size_t j = 0 ; j < 2 ; j++) {
-      a.i32[j] = (int32_t) munit_rand_int_range(-65536, 65535);
-      b.i32[j] = (int32_t) munit_rand_int_range(-65536, 65535);
+      a.i32[j] = HEDLEY_STATIC_CAST(int32_t, munit_rand_int_range(-65536, 65535));
+      b.i32[j] = HEDLEY_STATIC_CAST(int32_t, munit_rand_int_range(-65536, 65535));
     }
 
     r = simde__m128_to_private(simde_mm_cvtpi32_ps(simde__m128_from_private(a), simde__m64_from_private(b)));
 
-    simde_assert_int32_close(b.i32[0], (int32_t) r.f32[0]);
-    simde_assert_int32_close(b.i32[1], (int32_t) r.f32[1]);
+    simde_assert_int32_close(b.i32[0], HEDLEY_STATIC_CAST(int32_t, r.f32[0]));
+    simde_assert_int32_close(b.i32[1], HEDLEY_STATIC_CAST(int32_t, r.f32[1]));
     munit_assert_int32(a.i32[2], ==, r.i32[2]);
     munit_assert_int32(a.i32[3], ==, r.i32[3]);
   }
@@ -2012,16 +2012,16 @@ test_simde_mm_cvtpi32x2_ps(const MunitParameter params[], void* data) {
     simde__m128_private r;
 
     for (size_t j = 0 ; j < 2 ; j++) {
-      a.i32[j] = munit_rand_int_range(-65536, 65535);
-      b.i32[j] = munit_rand_int_range(-65536, 65535);
+      a.i32[j] = HEDLEY_STATIC_CAST(int32_t, munit_rand_int_range(-65536, 65535));
+      b.i32[j] = HEDLEY_STATIC_CAST(int32_t, munit_rand_int_range(-65536, 65535));
     }
 
     r = simde__m128_to_private(simde_mm_cvtpi32x2_ps(simde__m64_from_private(a), simde__m64_from_private(b)));
 
-    simde_assert_int32_close(a.i32[0], (int32_t) r.f32[0]);
-    simde_assert_int32_close(a.i32[1], (int32_t) r.f32[1]);
-    simde_assert_int32_close(b.i32[0], (int32_t) r.f32[2]);
-    simde_assert_int32_close(b.i32[1], (int32_t) r.f32[3]);
+    simde_assert_int32_close(a.i32[0], HEDLEY_STATIC_CAST(int32_t, r.f32[0]));
+    simde_assert_int32_close(a.i32[1], HEDLEY_STATIC_CAST(int32_t, r.f32[1]));
+    simde_assert_int32_close(b.i32[0], HEDLEY_STATIC_CAST(int32_t, r.f32[2]));
+    simde_assert_int32_close(b.i32[1], HEDLEY_STATIC_CAST(int32_t, r.f32[3]));
   }
 
   simde_mm_empty();
@@ -2196,14 +2196,14 @@ test_simde_mm_cvtpu16_ps(const MunitParameter params[], void* data) {
     simde__m64_private a;
     simde__m128_private r;
 
-    munit_rand_memory(sizeof(a), (uint8_t*) &a);
+    munit_rand_memory(sizeof(a), HEDLEY_REINTERPRET_CAST(uint8_t*, &a));
 
     r = simde__m128_to_private(simde_mm_cvtpu16_ps(simde__m64_from_private(a)));
 
-    simde_assert_int32_close((uint16_t) r.f32[0], a.u16[0]);
-    simde_assert_int32_close((uint16_t) r.f32[1], a.u16[1]);
-    simde_assert_int32_close((uint16_t) r.f32[2], a.u16[2]);
-    simde_assert_int32_close((uint16_t) r.f32[3], a.u16[3]);
+    simde_assert_int32_close(HEDLEY_STATIC_CAST(uint16_t, r.f32[0]), a.u16[0]);
+    simde_assert_int32_close(HEDLEY_STATIC_CAST(uint16_t, r.f32[1]), a.u16[1]);
+    simde_assert_int32_close(HEDLEY_STATIC_CAST(uint16_t, r.f32[2]), a.u16[2]);
+    simde_assert_int32_close(HEDLEY_STATIC_CAST(uint16_t, r.f32[3]), a.u16[3]);
   }
 
   simde_mm_empty();
@@ -2220,14 +2220,14 @@ test_simde_mm_cvtpu8_ps(const MunitParameter params[], void* data) {
     simde__m64_private a;
     simde__m128_private r;
 
-    munit_rand_memory(sizeof(a), (uint8_t*) &a);
+    munit_rand_memory(sizeof(a), HEDLEY_REINTERPRET_CAST(uint8_t*, &a));
 
     r = simde__m128_to_private(simde_mm_cvtpu8_ps(simde__m64_from_private(a)));
 
-    simde_assert_int32_close((uint16_t) r.f32[0], a.u8[0]);
-    simde_assert_int32_close((uint16_t) r.f32[1], a.u8[1]);
-    simde_assert_int32_close((uint16_t) r.f32[2], a.u8[2]);
-    simde_assert_int32_close((uint16_t) r.f32[3], a.u8[3]);
+    simde_assert_int32_close(HEDLEY_STATIC_CAST(uint16_t, r.f32[0]), a.u8[0]);
+    simde_assert_int32_close(HEDLEY_STATIC_CAST(uint16_t, r.f32[1]), a.u8[1]);
+    simde_assert_int32_close(HEDLEY_STATIC_CAST(uint16_t, r.f32[2]), a.u8[2]);
+    simde_assert_int32_close(HEDLEY_STATIC_CAST(uint16_t, r.f32[3]), a.u8[3]);
   }
 
   simde_mm_empty();
@@ -2244,12 +2244,12 @@ test_simde_mm_cvtsi32_ss(const MunitParameter params[], void* data) {
     simde__m128_private a, r;
     int32_t b;
 
-    munit_rand_memory(sizeof(a), (uint8_t*) &a);
-    b = (int32_t) munit_rand_int_range(INT16_MIN, INT16_MAX);
+    munit_rand_memory(sizeof(a), HEDLEY_REINTERPRET_CAST(uint8_t*, &a));
+    b = HEDLEY_STATIC_CAST(int32_t, munit_rand_int_range(INT16_MIN, INT16_MAX));
 
     r = simde__m128_to_private(simde_mm_cvtsi32_ss(simde__m128_from_private(a), b));
 
-    simde_assert_int32_close((int) r.f32[0], b);
+    simde_assert_int32_close(HEDLEY_STATIC_CAST(int, r.f32[0]), b);
     munit_assert_int32(r.i32[1], ==, a.i32[1]);
     munit_assert_int32(r.i32[2], ==, a.i32[2]);
     munit_assert_int32(r.i32[3], ==, a.i32[3]);
@@ -2343,29 +2343,29 @@ test_simde_mm_cvtss_si32(const MunitParameter params[], void* data) {
 
   const struct {
     simde__m128 a;
-    int32_t r;
+    simde_float32 r;
   } test_vec[8] = {
     { simde_mm_set_ps(SIMDE_FLOAT32_C(  -420.84), SIMDE_FLOAT32_C(   180.64), SIMDE_FLOAT32_C(  -145.08), SIMDE_FLOAT32_C(   328.00)),
-      INT32_C(        328) },
+       SIMDE_FLOAT32_C(328.00) },
     { simde_mm_set_ps(SIMDE_FLOAT32_C(   951.13), SIMDE_FLOAT32_C(   455.59), SIMDE_FLOAT32_C(   803.81), SIMDE_FLOAT32_C(  -553.94)),
-      INT32_C(       -553) },
+      -SIMDE_FLOAT32_C(553.94) },
     { simde_mm_set_ps(SIMDE_FLOAT32_C(  -596.13), SIMDE_FLOAT32_C(  -629.54), SIMDE_FLOAT32_C(  -358.00), SIMDE_FLOAT32_C(  -173.08)),
-      INT32_C(       -173) },
+      -SIMDE_FLOAT32_C(173.08) },
     { simde_mm_set_ps(SIMDE_FLOAT32_C(   531.31), SIMDE_FLOAT32_C(  -294.53), SIMDE_FLOAT32_C(   348.93), SIMDE_FLOAT32_C(  -374.17)),
-      INT32_C(       -374) },
+      -SIMDE_FLOAT32_C(374.17) },
     { simde_mm_set_ps(SIMDE_FLOAT32_C(    -5.22), SIMDE_FLOAT32_C(  -902.50), SIMDE_FLOAT32_C(   534.84), SIMDE_FLOAT32_C(   611.14)),
-      INT32_C(        611) },
+       SIMDE_FLOAT32_C(611.14) },
     { simde_mm_set_ps(SIMDE_FLOAT32_C(   437.42), SIMDE_FLOAT32_C(   -64.33), SIMDE_FLOAT32_C(  -167.86), SIMDE_FLOAT32_C(  -495.17)),
-      INT32_C(       -495) },
+      -SIMDE_FLOAT32_C(495.17) },
     { simde_mm_set_ps(SIMDE_FLOAT32_C(   400.50), SIMDE_FLOAT32_C(   665.80), SIMDE_FLOAT32_C(   205.90), SIMDE_FLOAT32_C(   133.58)),
-      INT32_C(        133) },
+       SIMDE_FLOAT32_C(133.58) },
     { simde_mm_set_ps(SIMDE_FLOAT32_C(   762.41), SIMDE_FLOAT32_C(  -424.85), SIMDE_FLOAT32_C(   903.51), SIMDE_FLOAT32_C(  -209.85)),
-      INT32_C(       -209) }
+      -SIMDE_FLOAT32_C(209.85) }
   };
 
   for (size_t i = 0 ; i < (sizeof(test_vec) / sizeof(test_vec[0])); i++) {
-    int32_t r = simde_mm_cvtss_f32(test_vec[i].a);
-    munit_assert_int32(r, ==, test_vec[i].r);
+    simde_float32 r = simde_mm_cvtss_f32(test_vec[i].a);
+    munit_assert_double_equal(HEDLEY_STATIC_CAST(double, r), HEDLEY_STATIC_CAST(double, test_vec[i].r), 1);
   }
 
   return MUNIT_OK;
