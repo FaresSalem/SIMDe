@@ -25,6 +25,12 @@
 #define SIMDE_COMMON_H
 
 #include "hedley.h"
+
+#define SIMDE_VERSION_MAJOR 0
+#define SIMDE_VERSION_MINOR 5
+#define SIMDE_VERSION_MICRO 0
+#define SIMDE_VERSION HEDLEY_VERSION_ENCODE(SIMDE_VERSION_MAJOR, SIMDE_VERSION_MINOR, SIMDE_VERSION_MICRO)
+
 #include "simde-arch.h"
 
 #include <stddef.h>
@@ -160,12 +166,16 @@
    but the code needs to be refactored a bit to take advantage. */
 #  if !defined(SIMDE_NO_CONVERT_VECTOR) && defined(SIMDE_VECTOR_SUBSCRIPT)
 #    if HEDLEY_HAS_BUILTIN(__builtin_convertvector) || HEDLEY_GCC_VERSION_CHECK(9,0,0)
-/* https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93557 */
-#      define SIMDE__CONVERT_VECTOR(to, from) ((to) = (__extension__({ \
-           __typeof__(from) from_ = (from); \
-           ((void) from_); \
-           __builtin_convertvector(from_, __typeof__(to)); \
-         })))
+#      if HEDLEY_GCC_VERSION_CHECK(9,0,0) && !HEDLEY_GCC_VERSION_CHECK(9,3,0)
+         /* https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93557 */
+#        define SIMDE__CONVERT_VECTOR(to, from) ((to) = (__extension__({ \
+             __typeof__(from) from_ = (from); \
+             ((void) from_); \
+             __builtin_convertvector(from_, __typeof__(to)); \
+           })))
+#      else
+#        define SIMDE__CONVERT_VECTOR(to, from) ((to) = __builtin_convertvector((from), __typeof__(to)))
+#      endif
 #    endif
 #  endif
 #endif
@@ -433,7 +443,7 @@ HEDLEY_STATIC_ASSERT(sizeof(simde_float64) == 8, "Unable to find 64-bit floating
 
 #if \
   HEDLEY_HAS_WARNING("-Wtautological-compare") || \
-  HEDLEY_GCC_VERSION_CHECK(8,0,0)
+  HEDLEY_GCC_VERSION_CHECK(7,0,0)
 #  if defined(__cplusplus)
 #    if (__cplusplus >= 201402L)
 #      define SIMDE_TAUTOLOGICAL_COMPARE_(expr) \
@@ -456,6 +466,13 @@ HEDLEY_STATIC_ASSERT(sizeof(simde_float64) == 8, "Unable to find 64-bit floating
 #endif
 #if !defined(SIMDE_TAUTOLOGICAL_COMPARE_)
 #  define SIMDE_TAUTOLOGICAL_COMPARE_(expr) (expr)
+#endif
+
+#if \
+  defined(HEDLEY_MSVC_VERSION)
+#  define SIMDE_DIAGNOSTIC_DISABLE_NON_CONSTANT_AGGREGATE_INITIALIZER_ __pragma(warning(disable:4204))
+#else
+#  define SIMDE_DIAGNOSTIC_DISABLE_NON_CONSTANT_AGGREGATE_INITIALIZER_
 #endif
 
 #if \
@@ -484,7 +501,8 @@ HEDLEY_STATIC_ASSERT(sizeof(simde_float64) == 8, "Unable to find 64-bit floating
   SIMDE_DIAGNOSTIC_DISABLE_NO_EMMS_INSTRUCTION_ \
   SIMDE_DIAGNOSTIC_DISABLE_SIMD_PRAGMA_DEPRECATED_ \
   SIMDE_DIAGNOSTIC_DISABLE_CONDITIONAL_UNINITIALIZED_ \
-  SIMDE_DIAGNOSTIC_DISABLE_FLOAT_EQUAL_
+  SIMDE_DIAGNOSTIC_DISABLE_FLOAT_EQUAL_ \
+  SIMDE_DIAGNOSTIC_DISABLE_NON_CONSTANT_AGGREGATE_INITIALIZER_
 
 #if defined(__STDC_HOSTED__)
 #  define SIMDE_STDC_HOSTED __STDC_HOSTED__
@@ -658,6 +676,12 @@ HEDLEY_STATIC_ASSERT(sizeof(simde_float64) == 8, "Unable to find 64-bit floating
 #    endif
 #    if !HEDLEY_GCC_VERSION_CHECK(9,0,0) && defined(SIMDE_ARCH_AARCH64)
 #      define SIMDE_BUG_GCC_ARM_SHIFT_SCALAR
+#    endif
+#    if defined(SIMDE_ARCH_X86) && !defined(SIMDE_ARCH_AMD64)
+#      define SIMDE_BUG_GCC_94482
+#    endif
+#    if defined(SIMDE_ARCH_AARCH64)
+#      define SIMDE_BUG_GCC_94488
 #    endif
 #  endif
 #  if defined(HEDLEY_EMSCRIPTEN_VERSION)

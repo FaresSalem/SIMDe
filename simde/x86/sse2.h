@@ -1924,7 +1924,8 @@ simde_mm_cvtsd_f64 (simde__m128d a) {
 #if defined(SIMDE_SSE2_NATIVE) && !defined(__PGI)
   return _mm_cvtsd_f64(a);
 #else
-  return simde__m128d_to_private(a).f64[0];
+  simde__m128d_private a_ = simde__m128d_to_private(a);
+  return a_.f64[0];
 #endif
 }
 #if defined(SIMDE_SSE2_ENABLE_NATIVE_ALIASES)
@@ -2241,7 +2242,8 @@ simde_mm_cvtsd_si32 (simde__m128d a) {
 #if defined(SIMDE_SSE2_NATIVE)
   return _mm_cvtsd_si32(a);
 #else
-  return (int32_t) (simde__m128d_to_private(a).f64[0]);
+  simde__m128d_private a_ = simde__m128d_to_private(a);
+  return SIMDE_CONVERT_FTOI(int32_t, a_.f64[0]);
 #endif
 }
 #if defined(SIMDE_SSE2_ENABLE_NATIVE_ALIASES)
@@ -2258,7 +2260,8 @@ simde_mm_cvtsd_si64 (simde__m128d a) {
     return _mm_cvtsd_si64(a);
   #endif
 #else
-  return (int32_t) (simde__m128d_to_private(a).f64[0]);
+  simde__m128d_private a_ = simde__m128d_to_private(a);
+  return SIMDE_CONVERT_FTOI(int64_t, a_.f64[0]);
 #endif
 }
 #define simde_mm_cvtsd_si64x(a) simde_mm_cvtsd_si64(a)
@@ -2321,7 +2324,8 @@ simde_mm_cvtsi128_si64 (simde__m128i a) {
     return _mm_cvtsi128_si64(a);
   #endif
 #else
-  return simde__m128i_to_private(a).i64[0];
+  simde__m128i_private a_ = simde__m128i_to_private(a);
+  return a_.i64[0];
 #endif
 }
 #define simde_mm_cvtsi128_si64x(a) simde_mm_cvtsi128_si64(a)
@@ -2528,7 +2532,8 @@ simde_mm_cvttsd_si32 (simde__m128d a) {
 #if defined(SIMDE_SSE2_NATIVE)
   return _mm_cvttsd_si32(a);
 #else
-  return SIMDE_CONVERT_FTOI(int32_t, simde__m128d_to_private(a).f64[0]);
+  simde__m128d_private a_ = simde__m128d_to_private(a);
+  return SIMDE_CONVERT_FTOI(int32_t, a_.f64[0]);
 #endif
 }
 #if defined(SIMDE_SSE2_ENABLE_NATIVE_ALIASES)
@@ -2545,7 +2550,8 @@ simde_mm_cvttsd_si64 (simde__m128d a) {
     return _mm_cvttsd_si64x(a);
   #endif
 #else
-  return SIMDE_CONVERT_FTOI(int64_t, simde__m128d_to_private(a).f64[0]);
+  simde__m128d_private a_ = simde__m128d_to_private(a);
+  return SIMDE_CONVERT_FTOI(int64_t, a_.f64[0]);
 #endif
 }
 #define simde_mm_cvttsd_si64x(a) simde_mm_cvttsd_si64(a)
@@ -2610,7 +2616,8 @@ SIMDE__FUNCTION_ATTRIBUTES
 int32_t
 simde_mm_extract_epi16 (simde__m128i a, const int imm8)
     HEDLEY_REQUIRE_MSG((imm8 & 7) == imm8, "imm8 must be in range [0, 7]")  {
-  return simde__m128i_to_private(a).u16[imm8 & 7];
+  simde__m128i_private a_ = simde__m128i_to_private(a);
+  return a_.u16[imm8 & 7];
 }
 #if defined(SIMDE_SSE2_NATIVE) && (!defined(HEDLEY_GCC_VERSION) || HEDLEY_GCC_VERSION_CHECK(4,6,0))
 #  define simde_mm_extract_epi16(a, imm8) _mm_extract_epi16(a, imm8)
@@ -2791,18 +2798,18 @@ simde_mm_loadl_pd (simde__m128d a, simde_float64 const* mem_addr) {
 SIMDE__FUNCTION_ATTRIBUTES
 simde__m128d
 simde_mm_loadr_pd (simde_float64 const mem_addr[HEDLEY_ARRAY_PARAM(2)]) {
-  simde__m128d_private r_;
-
   simde_assert_aligned(16, mem_addr);
 
 #if defined(SIMDE_SSE2_NATIVE)
   return _mm_loadr_pd(mem_addr);
 #else
+  simde__m128d_private r_;
+
   r_.f64[0] = mem_addr[1];
   r_.f64[1] = mem_addr[0];
-#endif
 
   return simde__m128d_from_private(r_);
+#endif
 }
 #if defined(SIMDE_SSE2_ENABLE_NATIVE_ALIASES)
 #  define _mm_loadr_pd(mem_addr) simde_mm_loadr_pd(mem_addr)
@@ -2828,17 +2835,19 @@ simde_mm_loadu_pd (simde_float64 const mem_addr[HEDLEY_ARRAY_PARAM(2)]) {
 SIMDE__FUNCTION_ATTRIBUTES
 simde__m128i
 simde_mm_loadu_si128 (simde__m128i const* mem_addr) {
-  simde__m128i_private r_;
+  #if defined(SIMDE_SSE2_NATIVE)
+    return _mm_loadu_si128(HEDLEY_STATIC_CAST(__m128i const*, mem_addr));
+  #else
+    simde__m128i_private r_;
 
-#if defined(SIMDE_SSE2_NATIVE)
-  return _mm_loadu_si128(HEDLEY_STATIC_CAST(__m128i const*, mem_addr));
-#elif defined(SIMDE_SSE2_NEON)
-  r_.neon_i32 = vld1q_s32((int32_t const*) mem_addr);
-#else
-  simde_memcpy(&r_, mem_addr, sizeof(r_));
-#endif
+    #if defined(SIMDE_SSE2_NEON)
+      r_.neon_i32 = vld1q_s32((int32_t const*) mem_addr);
+    #else
+      simde_memcpy(&r_, mem_addr, sizeof(r_));
+    #endif
 
-  return simde__m128i_from_private(r_);
+    return simde__m128i_from_private(r_);
+  #endif
 }
 #if defined(SIMDE_SSE2_ENABLE_NATIVE_ALIASES)
 #  define _mm_loadu_si128(mem_addr) simde_mm_loadu_si128(mem_addr)
@@ -4007,7 +4016,8 @@ simde_mm_set1_epi64 (simde__m64 a) {
 #if defined(SIMDE_SSE2_NATIVE) && defined(SIMDE_ARCH_X86_MMX)
   return _mm_set1_epi64(a);
 #else
-  return simde_mm_set1_epi64x(simde__m64_to_private(a).i64[0]);
+  simde__m64_private a_ = simde__m64_to_private(a);
+  return simde_mm_set1_epi64x(a_.i64[0]);
 #endif
 }
 #if defined(SIMDE_SSE2_ENABLE_NATIVE_ALIASES)
@@ -4395,15 +4405,13 @@ simde_mm_sll_epi64 (simde__m128i a, simde__m128i count) {
   if (count_.u64[0] > 63)
     return simde_mm_setzero_si128();
 
-#if defined(SIMDE_VECTOR_SUBSCRIPT_SCALAR) && !defined(SIMDE_BUG_GCC_ARM_SHIFT_SCALAR)
-  /* GCC ≤ 7 on AArch64 generates an ICE here */
-  r_.u64 = (a_.u64 << count_.u64[0]);
-#else
-  SIMDE__VECTORIZE
+  const int_fast16_t s = HEDLEY_STATIC_CAST(int_fast16_t, count_.u64[0]);
+  #if !defined(SIMDE_BUG_GCC_94488)
+    SIMDE__VECTORIZE
+  #endif
   for (size_t i = 0 ; i < (sizeof(r_.u64) / sizeof(r_.u64[0])) ; i++) {
-    r_.u64[i] = a_.u64[i] << count_.u64[0];
+    r_.u64[i] = a_.u64[i] << s;
   }
-#endif
 
   return simde__m128i_from_private(r_);
 #endif
@@ -4532,11 +4540,13 @@ simde_mm_srl_epi64 (simde__m128i a, simde__m128i count) {
     a_ = simde__m128i_to_private(a),
     count_ = simde__m128i_to_private(count);
 
-  if (count_.u64[0] > 31)
+  if (count_.u64[0] > 63)
     return simde_mm_setzero_si128();
-  const int s = (int) (count_.u64[0]);
 
-  SIMDE__VECTORIZE
+  const int_fast16_t s = HEDLEY_STATIC_CAST(int_fast16_t, count_.u64[0]);
+  #if !defined(SIMDE_BUG_GCC_94488)
+    SIMDE__VECTORIZE
+  #endif
   for (size_t i = 0 ; i < (sizeof(r_.u64) / sizeof(r_.u64[0])) ; i++) {
     r_.u64[i] = a_.u64[i] >> s;
   }

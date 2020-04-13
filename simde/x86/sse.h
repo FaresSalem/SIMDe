@@ -776,6 +776,12 @@ simde_mm_cmpneq_ps (simde__m128 a, simde__m128 b) {
     r_.neon_u32 = vmvnq_u32(vceqq_f32(a_.neon_f32, b_.neon_f32));
   #elif defined(SIMDE_SSE_WASM_SIMD128)
     r_.wasm_v128 = wasm_f32x4_ne(a_.wasm_v128, b_.wasm_v128);
+  #elif defined(SIMDE_SSE_POWER_ALTIVEC) && (SIMDE_ARCH_POWER >= 900) && !defined(HEDLEY_IBM_VERSION)
+    /* vec_cmpne(vector float, vector float) is missing from XL C/C++ v16.1.1,
+       though the documentation (table 89 on page 432 of the IBM XL C/C++ for
+       Linux Compiler Reference, Version 16.1.1) shows that it should be
+       present.  Both GCC and clang support it. */
+    r_.altivec_f32 = (vector float) vec_cmpne(a_.altivec_f32, b_.altivec_f32);
   #elif defined(SIMDE_VECTOR_SUBSCRIPT_OPS)
     r_.i32 = (__typeof__(r_.i32)) (a_.f32 != b_.f32);
   #else
@@ -967,8 +973,8 @@ simde_mm_cmpunord_ss (simde__m128 a, simde__m128 b) {
 #if defined(simde_isnanf)
   r_.u32[0] = (simde_isnanf(a_.f32[0]) || simde_isnanf(b_.f32[0])) ? ~UINT32_C(0) : UINT32_C(0);
   SIMDE__VECTORIZE
-  for (size_t i = 1 ; i < (sizeof(r_.f32) / sizeof(r_.f32[0])) ; i++) {
-    r_.f32[i] = a_.f32[i];
+  for (size_t i = 1 ; i < (sizeof(r_.u32) / sizeof(r_.u32[0])) ; i++) {
+    r_.u32[i] = a_.u32[i];
   }
 #else
   HEDLEY_UNREACHABLE();
@@ -1751,7 +1757,8 @@ SIMDE__FUNCTION_ATTRIBUTES
 int16_t
 simde_mm_extract_pi16 (simde__m64 a, const int imm8)
     HEDLEY_REQUIRE_MSG((imm8 & 3) == imm8, "imm8 must be in range [0, 3]") {
-  return simde__m64_to_private(a).i16[imm8];
+  simde__m64_private a_ = simde__m64_to_private(a);
+  return a_.i16[imm8];
 }
 #if defined(SIMDE_SSE_NATIVE) && defined(SIMDE_ARCH_X86_MMX) && !defined(HEDLEY_PGI_VERSION)
 #  if HEDLEY_HAS_WARNING("-Wvector-conversion")
