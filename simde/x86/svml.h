@@ -1,4 +1,6 @@
-/* Permission is hereby granted, free of charge, to any person
+/* SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
  * restriction, including without limitation the rights to use, copy,
@@ -22,11 +24,10 @@
  *   2020      Evan Nemerson <evan@nemerson.com>
  */
 
-#if !defined(SIMDE__SVML_H)
-#  if !defined(SIMDE__SVML_H)
-#    define SIMDE__SVML_H
-#  endif
-#  include "avx2.h"
+#if !defined(SIMDE_SVML_H)
+#define SIMDE_SVML_H
+
+#include "avx2.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
@@ -540,4 +541,4 @@ SIMDE__END_DECLS
 
 HEDLEY_DIAGNOSTIC_POP
 
-#endif /* !defined(SIMDE__SVML_H) */
+#endif /* !defined(SIMDE_SVML_H) */

@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2020 Evan Nemerson <evan@nemerson.com>
+/* SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -19,27 +19,18 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ * Copyright:
+ *   2017-2020 Evan Nemerson <evan@nemerson.com>
  */
 
-#if !defined(SIMDE__SSE4_1_H)
-#  if !defined(SIMDE__SSE4_1_H)
-#    define SIMDE__SSE4_1_H
-#  endif
-#  include "ssse3.h"
+#if !defined(SIMDE_SSE4_1_H)
+#define SIMDE_SSE4_1_H
+
+#include "ssse3.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
-
-#  if defined(SIMDE_SSE4_1_NATIVE)
-#    undef SIMDE_SSE4_1_NATIVE
-#  endif
-#  if defined(SIMDE_ARCH_X86_SSE4_1) && !defined(SIMDE_SSE4_1_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
-#    define SIMDE_SSE4_1_NATIVE
-#  elif defined(__ARM_NEON) && !defined(SIMDE_SSE4_1_NO_NEON) && !defined(SIMDE_NO_NEON)
-#    define SIMDE_SSE4_1_NEON
-#  elif defined(SIMDE_ARCH_POWER_ALTIVEC)
-#    define SIMDE_SSE4_1_POWER_ALTIVEC
-#  endif
 
 #  if defined(SIMDE_SSE4_1_NATIVE) && !defined(SIMDE_SSE3_NATIVE)
 #    if defined(SIMDE_SSE4_1_FORCE_NATIVE)
@@ -87,17 +78,17 @@ SIMDE__BEGIN_DECLS
 #  define SIMDE_MM_FROUND_NO_EXC         0x08
 #endif
 
-#define SIMDE_MM_FROUND_NINT		\
+#define SIMDE_MM_FROUND_NINT \
   (SIMDE_MM_FROUND_TO_NEAREST_INT | SIMDE_MM_FROUND_RAISE_EXC)
-#define SIMDE_MM_FROUND_FLOOR	\
+#define SIMDE_MM_FROUND_FLOOR \
   (SIMDE_MM_FROUND_TO_NEG_INF | SIMDE_MM_FROUND_RAISE_EXC)
-#define SIMDE_MM_FROUND_CEIL		\
+#define SIMDE_MM_FROUND_CEIL \
   (SIMDE_MM_FROUND_TO_POS_INF | SIMDE_MM_FROUND_RAISE_EXC)
-#define SIMDE_MM_FROUND_TRUNC	\
+#define SIMDE_MM_FROUND_TRUNC \
   (SIMDE_MM_FROUND_TO_ZERO | SIMDE_MM_FROUND_RAISE_EXC)
-#define SIMDE_MM_FROUND_RINT		\
+#define SIMDE_MM_FROUND_RINT \
   (SIMDE_MM_FROUND_CUR_DIRECTION | SIMDE_MM_FROUND_RAISE_EXC)
-#define SIMDE_MM_FROUND_NEARBYINT	\
+#define SIMDE_MM_FROUND_NEARBYINT \
   (SIMDE_MM_FROUND_CUR_DIRECTION | SIMDE_MM_FROUND_NO_EXC)
 
 #if defined(SIMDE_SSE4_1_ENABLE_NATIVE_ALIASES)
@@ -1780,4 +1771,4 @@ SIMDE__END_DECLS
 
 HEDLEY_DIAGNOSTIC_POP
 
-#endif /* !defined(SIMDE__SSE4_1_H) */
+#endif /* !defined(SIMDE_SSE4_1_H) */

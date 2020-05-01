@@ -1,4 +1,6 @@
-/* Permission is hereby granted, free of charge, to any person
+/* SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
  * restriction, including without limitation the rights to use, copy,
@@ -19,29 +21,19 @@
  * SOFTWARE.
  *
  * Copyright:
- *   2018      Evan Nemerson <evan@nemerson.com>
+ *   2018-2020 Evan Nemerson <evan@nemerson.com>
  *   2019      Michael R. Crusoe <michael.crusoe@gmail.com>
+ *   2020      Himanshi Mathur <himanshi18037@iiitd.ac.in>
+ *   2020      Hidayat Khan <huk2209@gmail.com>
  */
 
-#include "sse4.1.h"
-#include "sse4.2.h"
-#if !defined(SIMDE__AVX2_H)
-#  if !defined(SIMDE__AVX2_H)
-#    define SIMDE__AVX2_H
-#  endif
-#  include "avx.h"
+#if !defined(SIMDE_AVX2_H)
+#define SIMDE_AVX2_H
+
+#include "avx.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
-
-#  if defined(SIMDE_AVX2_NATIVE)
-#    undef SIMDE_AVX2_NATIVE
-#  endif
-#  if defined(SIMDE_ARCH_X86_AVX2) && !defined(SIMDE_AVX2_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
-#    define SIMDE_AVX2_NATIVE
-#  elif defined(SIMDE_ARCH_ARM_NEON) && !defined(SIMDE_AVX2_NO_NEON) && !defined(SIMDE_NO_NEON)
-#    define SIMDE_AVX2_NEON
-#  endif
 
 #  if defined(SIMDE_AVX2_NATIVE) && !defined(SIMDE_AVX_NATIVE)
 #    if defined(SIMDE_AVX2_FORCE_NATIVE)
@@ -623,6 +615,48 @@ simde_mm256_blendv_epi8(simde__m256i a, simde__m256i b, simde__m256i mask) {
 #endif
 #if defined(SIMDE_AVX2_ENABLE_NATIVE_ALIASES)
 #  define _mm256_blendv_epi8(a, b, mask) simde_mm256_blendv_epi8(a, b, mask)
+#endif
+
+SIMDE__FUNCTION_ATTRIBUTES
+simde__m128i
+simde_mm_broadcastb_epi8 (simde__m128i a) {
+#if defined(SIMDE_AVX2_NATIVE)
+  return _mm_broadcastb_epi8(a);
+#else
+  simde__m128i_private r_;
+  simde__m128i_private a_= simde__m128i_to_private(a);
+
+  SIMDE__VECTORIZE
+  for (size_t i = 0 ; i < (sizeof(r_.i8) / sizeof(r_.i8[0])) ; i++) {
+    r_.i8[i] = a_.i8[0];
+  }
+
+  return simde__m128i_from_private(r_);
+#endif
+}
+#if defined(SIMDE_AVX2_ENABLE_NATIVE_ALIASES)
+#  define _mm_broadcastb_epi8(a) simde_mm_broadcastb_epi8(a)
+#endif
+
+SIMDE__FUNCTION_ATTRIBUTES
+simde__m256i
+simde_mm256_broadcastb_epi8 (simde__m128i a) {
+#if defined(SIMDE_AVX2_NATIVE)
+  return _mm256_broadcastb_epi8(a);
+#else
+  simde__m256i_private r_;
+  simde__m128i_private a_= simde__m128i_to_private(a);
+
+  SIMDE__VECTORIZE
+  for (size_t i = 0 ; i < (sizeof(r_.i8) / sizeof(r_.i8[0])) ; i++) {
+    r_.i8[i] = a_.i8[0];
+  }
+
+  return simde__m256i_from_private(r_);
+#endif
+}
+#if defined(SIMDE_AVX2_ENABLE_NATIVE_ALIASES)
+#  define _mm256_broadcastb_epi8(a) simde_mm256_broadcastb_epi8(a)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -1224,7 +1258,7 @@ simde_mm256_madd_epi16 (simde__m256i a, simde__m256i b) {
 #endif
 }
 #if defined(SIMDE_AVX2_ENABLE_NATIVE_ALIASES)
-#  define _mm256_add_epi16(a, b) simde_mm256_add_epi16(a, b)
+#  define _mm256_madd_epi16(a, b) simde_mm256_madd_epi16(a, b)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -1617,7 +1651,7 @@ simde_mm256_or_si256 (simde__m256i a, simde__m256i b) {
 #endif
 }
 #if defined(SIMDE_AVX2_ENABLE_NATIVE_ALIASES)
-#  define _mm256_or_si256(a, b) simde_mm256_or_si128(a, b)
+#  define _mm256_or_si256(a, b) simde_mm256_or_si256(a, b)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -1776,19 +1810,19 @@ simde_mm256_shuffle_epi32 (simde__m256i a, const int imm8) {
 #  define simde_mm256_shufflelo_epi16(a, imm8) (__extension__ ({ \
       const simde__m256i_private simde__tmp_a_ = simde__m256i_to_private(a); \
       simde__m256i_from_private((simde__m256i_private) { .i16 = \
-	      SIMDE__SHUFFLE_VECTOR(16, 32, \
-				  (simde__tmp_a_).i16, \
-				  (simde__tmp_a_).i16, \
-				  (((imm8)     ) & 3), \
-				  (((imm8) >> 2) & 3), \
-				  (((imm8) >> 4) & 3), \
-				  (((imm8) >> 6) & 3), \
-				  4, 5, 6, 7, \
-				  ((((imm8)     ) & 3) + 8), \
-				  ((((imm8) >> 2) & 3) + 8), \
-				  ((((imm8) >> 4) & 3) + 8), \
-				  ((((imm8) >> 6) & 3) + 8), \
-				  12, 13, 14, 15) }); }))
+        SIMDE__SHUFFLE_VECTOR(16, 32, \
+          (simde__tmp_a_).i16, \
+          (simde__tmp_a_).i16, \
+          (((imm8)     ) & 3), \
+          (((imm8) >> 2) & 3), \
+          (((imm8) >> 4) & 3), \
+          (((imm8) >> 6) & 3), \
+          4, 5, 6, 7, \
+          ((((imm8)     ) & 3) + 8), \
+          ((((imm8) >> 2) & 3) + 8), \
+          ((((imm8) >> 4) & 3) + 8), \
+          ((((imm8) >> 6) & 3) + 8), \
+          12, 13, 14, 15) }); }))
 #else
 #  define simde_mm256_shufflelo_epi16(a, imm8) \
      simde_mm256_set_m128i( \
@@ -2077,7 +2111,7 @@ simde_mm256_srli_si256 (simde__m256i a, const int imm8) {
        simde_mm_bsrli_si128(simde_mm256_extracti128_si256(a, 0), (imm8)))
 #endif
 #if defined(SIMDE_AVX2_ENABLE_NATIVE_ALIASES)
-#  define _mm256_srli_si256(a, imm8) simde_mm_srli_si256(a, imm8)
+#  define _mm256_srli_si256(a, imm8) simde_mm256_srli_si256(a, imm8)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -2357,4 +2391,4 @@ SIMDE__END_DECLS
 
 HEDLEY_DIAGNOSTIC_POP
 
-#endif /* !defined(SIMDE__AVX2_H) */
+#endif /* !defined(SIMDE_AVX2_H) */

@@ -1,4 +1,6 @@
-/* Permission is hereby granted, free of charge, to any person
+/* SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
  * restriction, including without limitation the rights to use, copy,
@@ -27,28 +29,13 @@
  *   2018      Jeff Daily <jeff.daily@amd.com>
  */
 
-#include "mmx.h"
-#if !defined(SIMDE__SSE2_H)
-#  if !defined(SIMDE__SSE2_H)
-#    define SIMDE__SSE2_H
-#  endif
-#  include "sse.h"
+#if !defined(SIMDE_SSE2_H)
+#define SIMDE_SSE2_H
+
+#include "sse.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
-
-#  if defined(SIMDE_SSE2_NATIVE)
-#    undef SIMDE_SSE2_NATIVE
-#  endif
-#  if defined(SIMDE_ARCH_X86_SSE2) && !defined(SIMDE_SSE2_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
-#    define SIMDE_SSE2_NATIVE
-#  elif defined(SIMDE_ARCH_ARM_NEON) && !defined(SIMDE_SSE2_NO_NEON) && !defined(SIMDE_NO_NEON)
-#    define SIMDE_SSE2_NEON
-#  elif defined(SIMDE_ARCH_WASM_SIMD128)
-#    define SIMDE_SSE2_WASM_SIMD128
-#  elif defined(SIMDE_ARCH_POWER_ALTIVEC)
-#    define SIMDE_SSE2_POWER_ALTIVEC
-#  endif
 
 #  if defined(SIMDE_SSE2_NATIVE) && !defined(SIMDE_SSE_NATIVE)
 #    if defined(SIMDE_SSE2_FORCE_NATIVE)
@@ -2902,7 +2889,7 @@ simde_mm_maskmoveu_si128 (simde__m128i a, simde__m128i mask, int8_t mem_addr[HED
 #endif
 }
 #if defined(SIMDE_SSE2_ENABLE_NATIVE_ALIASES)
-#  define _mm_maskmoveu_si128(a, mask, mem_addr) simde_mm_maskmoveu_si128(a, (mask), HEDLEY_REINTERPRET_CAST(int8_t*, mem_addr))
+#  define _mm_maskmoveu_si128(a, mask, mem_addr) simde_mm_maskmoveu_si128(a, (mask), SIMDE_CHECKED_REINTERPRET_CAST(int8_t*, char*, mem_addr))
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -3898,7 +3885,7 @@ simde_mm_set_sd (simde_float64 a) {
 #elif defined(SIMDE_SSE2_NEON) && defined(SIMDE_ARCH_AARCH64)
   return vsetq_lane_f64(a, vdupq_n_f64(SIMDE_FLOAT32_C(0.0)), 0);
 #else
-  return simde_mm_set_pd(SIMDE_FLOAT32_C(0.0), a);
+  return simde_mm_set_pd(SIMDE_FLOAT64_C(0.0), a);
 
 #endif
 }
@@ -4152,12 +4139,12 @@ simde_mm_undefined_pd (void) {
   simde__m128d_private r_;
 
 #if defined(SIMDE_SSE2_NATIVE) && defined(SIMDE__HAVE_UNDEFINED128)
-  return _mm_undefined_pd();
+  r_.n = _mm_undefined_pd();
 #elif !defined(SIMDE_DIAGNOSTIC_DISABLE_UNINITIALIZED_)
- return simde_mm_setzero_pd();
+  r_ = simde__m128d_to_private(simde_mm_setzero_pd());
 #endif
 
- return simde__m128d_from_private(r_);
+  return simde__m128d_from_private(r_);
 }
 #if defined(SIMDE_SSE2_ENABLE_NATIVE_ALIASES)
 #  define _mm_undefined_pd() simde_mm_undefined_pd()
@@ -4169,12 +4156,12 @@ simde_mm_undefined_si128 (void) {
   simde__m128i_private r_;
 
 #if defined(SIMDE_SSE2_NATIVE) && defined(SIMDE__HAVE_UNDEFINED128)
-  return _mm_undefined_si128();
+  r_.n = _mm_undefined_si128();
 #elif !defined(SIMDE_DIAGNOSTIC_DISABLE_UNINITIALIZED_)
-  return simde_mm_setzero_si128();
+  r_ = simde__m128i_to_private(simde_mm_setzero_si128());
 #endif
 
- return simde__m128i_from_private(r_);
+  return simde__m128i_from_private(r_);
 }
 #if defined(SIMDE_SSE2_ENABLE_NATIVE_ALIASES)
 #  define _mm_undefined_si128() (simde_mm_undefined_si128())
@@ -5060,7 +5047,7 @@ simde_mm_stream_si64 (int64_t* mem_addr, int64_t a) {
   *mem_addr = a;
 }
 #if defined(SIMDE_SSE2_ENABLE_NATIVE_ALIASES)
-#  define _mm_stream_si64(mem_addr, a) simde_mm_stream_si64(mem_addr, a)
+#  define _mm_stream_si64(mem_addr, a) simde_mm_stream_si64(SIMDE_CHECKED_REINTERPRET_CAST(int64_t*, __int64*, mem_addr), a)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -5988,4 +5975,4 @@ SIMDE__END_DECLS
 
 HEDLEY_DIAGNOSTIC_POP
 
-#endif /* !defined(SIMDE__SSE2_H) */
+#endif /* !defined(SIMDE_SSE2_H) */

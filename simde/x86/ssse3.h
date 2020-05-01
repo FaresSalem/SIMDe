@@ -1,4 +1,6 @@
-/* Permission is hereby granted, free of charge, to any person
+/* SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
  * restriction, including without limitation the rights to use, copy,
@@ -22,25 +24,13 @@
  *   2017-2020 Evan Nemerson <evan@nemerson.com>
  */
 
-#if !defined(SIMDE__SSSE3_H)
-#  if !defined(SIMDE__SSSE3_H)
-#    define SIMDE__SSSE3_H
-#  endif
-#  include "sse3.h"
+#if !defined(SIMDE_SSSE3_H)
+#define SIMDE_SSSE3_H
+
+#include "sse3.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
-
-#  if defined(SIMDE_SSSE3_NATIVE)
-#    undef SIMDE_SSSE3_NATIVE
-#  endif
-#  if defined(SIMDE_ARCH_X86_SSSE3) && !defined(SIMDE_SSSE3_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
-#    define SIMDE_SSSE3_NATIVE
-#  elif defined(SIMDE_ARCH_ARM_NEON) && !defined(SIMDE_SSSE3_NO_NEON) && !defined(SIMDE_NO_NEON)
-#    define SIMDE_SSSE3_NEON
-#  elif defined(SIMDE_ARCH_POWER_ALTIVEC)
-#    define SIMDE_SSSE3_POWER_ALTIVEC
-#  endif
 
 #  if defined(SIMDE_SSSE3_NATIVE) && !defined(SIMDE_SSE3_NATIVE)
 #    if defined(SIMDE_SSSE3_FORCE_NATIVE)
@@ -1050,4 +1040,4 @@ SIMDE__END_DECLS
 
 HEDLEY_DIAGNOSTIC_POP
 
-#endif /* !defined(SIMDE__SSE2_H) */
+#endif /* !defined(SIMDE_SSE2_H) */

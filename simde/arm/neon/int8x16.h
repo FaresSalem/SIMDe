@@ -58,7 +58,7 @@ simde_vaddq_s8(simde_int8x16_t a, simde_int8x16_t b) {
   simde_int8x16_t r;
 #if defined(SIMDE_NEON_NATIVE)
   r.n = vaddq_s8(a.n, b.n);
-#elif defined(SIMDE_SSE2_NATIVE)
+#elif defined(SIMDE_NEON_SSE2)
   r.sse = _mm_add_epi8(a.sse, b.sse);
 #else
   SIMDE__VECTORIZE
@@ -87,11 +87,11 @@ simde_vld1q_s8 (int8_t const ptr[8]) {
 SIMDE__FUNCTION_ATTRIBUTES
 simde_int8x16_t
 simde_x_vloadq_s8 (int8_t  l0, int8_t  l1, int8_t  l2, int8_t  l3,
-		   int8_t  l4, int8_t  l5, int8_t  l6, int8_t  l7,
-		   int8_t  l8, int8_t  l9, int8_t l10, int8_t l11,
-		   int8_t l12, int8_t l13, int8_t l14, int8_t l15) {
+                   int8_t  l4, int8_t  l5, int8_t  l6, int8_t  l7,
+                   int8_t  l8, int8_t  l9, int8_t l10, int8_t l11,
+                   int8_t l12, int8_t l13, int8_t l14, int8_t l15) {
   int8_t v[] = { l0, l1,  l2,  l3,  l4,  l5,  l6,  l7,
-		 l8, l9, l10, l11, l12, l13, l14, l15};
+                 l8, l9, l10, l11, l12, l13, l14, l15};
   return simde_vld1q_s8(v);
 }
 
@@ -116,8 +116,6 @@ simde_vmulq_s8(simde_int8x16_t a, simde_int8x16_t b) {
   simde_int8x16_t r;
 #if defined(SIMDE_NEON_NATIVE)
   r.n = vmulq_s8(a.n, b.n);
-#elif defined(SIMDE_SSE2_NATIVE)
-  r.sse = _mm_mul_epi8(a.sse, b.sse);
 #else
   SIMDE__VECTORIZE
   for (size_t i = 0 ; i < (sizeof(r.i8) / sizeof(r.i8[0])) ; i++) {
@@ -133,7 +131,7 @@ simde_vsubq_s8(simde_int8x16_t a, simde_int8x16_t b) {
   simde_int8x16_t r;
 #if defined(SIMDE_NEON_NATIVE)
   r.n = vsubq_s8(a.n, b.n);
-#elif defined(SIMDE_SSE2_NATIVE)
+#elif defined(SIMDE_NEON_SSE2)
   r.sse = _mm_sub_epi8(a.sse, b.sse);
 #else
   SIMDE__VECTORIZE

@@ -1,4 +1,6 @@
-/* Permission is hereby granted, free of charge, to any person
+/* SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
  * restriction, including without limitation the rights to use, copy,
@@ -22,25 +24,13 @@
  *   2019      Evan Nemerson <evan@nemerson.com>
  */
 
-#include "sse.h"
-#include "sse2.h"
-#if !defined(SIMDE__FMA_H)
-#  if !defined(SIMDE__FMA_H)
-#    define SIMDE__FMA_H
-#  endif
-#  include "avx.h"
+#if !defined(SIMDE_FMA_H)
+#define SIMDE_FMA_H
+
+#include "avx.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
-
-#  if defined(SIMDE_FMA_NATIVE)
-#    undef SIMDE_FMA_NATIVE
-#  endif
-#  if defined(SIMDE_ARCH_X86_GMA) && !defined(SIMDE_FMA_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
-#    define SIMDE_FMA_NATIVE
-#  elif defined(SIMDE_ARCH_ARM_NEON) && !defined(SIMDE_FMA_NO_NEON) && !defined(SIMDE_NO_NEON)
-#    define SIMDE_FMA_NEON
-#  endif
 
 #  if defined(SIMDE_FMA_NATIVE) && !defined(SIMDE_AVX_NATIVE)
 #    if defined(SIMDE_FMA_FORCE_NATIVE)
@@ -87,7 +77,7 @@ simde_mm256_fmadd_pd (simde__m256d a, simde__m256d b, simde__m256d c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fmadd_pd(a, b, c) simde_mm_fmadd_pd(a, b, c)
+#  define _mm256_fmadd_pd(a, b, c) simde_mm256_fmadd_pd(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -113,7 +103,7 @@ simde_mm256_fmadd_ps (simde__m256 a, simde__m256 b, simde__m256 c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fmadd_ps(a, b, c) simde_mm_fmadd_ps(a, b, c)
+#  define _mm256_fmadd_ps(a, b, c) simde_mm256_fmadd_ps(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -165,7 +155,7 @@ simde_mm256_fmaddsub_pd (simde__m256d a, simde__m256d b, simde__m256d c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fmaddsub_pd(a, b, c) simde_mm_fmaddsub_pd(a, b, c)
+#  define _mm256_fmaddsub_pd(a, b, c) simde_mm256_fmaddsub_pd(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -191,7 +181,7 @@ simde_mm256_fmaddsub_ps (simde__m256 a, simde__m256 b, simde__m256 c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fmaddsub_ps(a, b, c) simde_mm_fmaddsub_ps(a, b, c)
+#  define _mm256_fmaddsub_ps(a, b, c) simde_mm256_fmaddsub_ps(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -217,7 +207,7 @@ simde_mm256_fmsub_pd (simde__m256d a, simde__m256d b, simde__m256d c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fmsub_pd(a, b, c) simde_mm_fmsub_pd(a, b, c)
+#  define _mm256_fmsub_pd(a, b, c) simde_mm256_fmsub_pd(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -243,7 +233,7 @@ simde_mm256_fmsub_ps (simde__m256 a, simde__m256 b, simde__m256 c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fmsub_ps(a, b, c) simde_mm_fmsub_ps(a, b, c)
+#  define _mm256_fmsub_ps(a, b, c) simde_mm256_fmsub_ps(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -319,7 +309,7 @@ simde_mm256_fmsubadd_pd (simde__m256d a, simde__m256d b, simde__m256d c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fmsubadd_pd(a, b, c) simde_mm_fmsubadd_pd(a, b, c)
+#  define _mm256_fmsubadd_pd(a, b, c) simde_mm256_fmsubadd_pd(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -369,7 +359,7 @@ simde_mm256_fmsubadd_ps (simde__m256 a, simde__m256 b, simde__m256 c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fmsubadd_ps(a, b, c) simde_mm_fmsubadd_ps(a, b, c)
+#  define _mm256_fmsubadd_ps(a, b, c) simde_mm256_fmsubadd_ps(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -417,7 +407,7 @@ simde_mm256_fnmadd_pd (simde__m256d a, simde__m256d b, simde__m256d c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fnmadd_pd(a, b, c) simde_mm_fnmadd_pd(a, b, c)
+#  define _mm256_fnmadd_pd(a, b, c) simde_mm256_fnmadd_pd(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -465,7 +455,7 @@ simde_mm256_fnmadd_ps (simde__m256 a, simde__m256 b, simde__m256 c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fnmadd_ps(a, b, c) simde_mm_fnmadd_ps(a, b, c)
+#  define _mm256_fnmadd_ps(a, b, c) simde_mm256_fnmadd_ps(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -557,7 +547,7 @@ simde_mm256_fnmsub_pd (simde__m256d a, simde__m256d b, simde__m256d c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fnmsub_pd(a, b, c) simde_mm_fnmsub_pd(a, b, c)
+#  define _mm256_fnmsub_pd(a, b, c) simde_mm256_fnmsub_pd(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -605,7 +595,7 @@ simde_mm256_fnmsub_ps (simde__m256 a, simde__m256 b, simde__m256 c) {
 #endif
 }
 #if defined(SIMDE_FMA_ENABLE_NATIVE_ALIASES)
-#  define _mm_fnmsub_ps(a, b, c) simde_mm_fnmsub_ps(a, b, c)
+#  define _mm256_fnmsub_ps(a, b, c) simde_mm256_fnmsub_ps(a, b, c)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -656,4 +646,4 @@ SIMDE__END_DECLS
 
 HEDLEY_DIAGNOSTIC_POP
 
-#endif /* !defined(SIMDE__FMA_H) */
+#endif /* !defined(SIMDE_FMA_H) */

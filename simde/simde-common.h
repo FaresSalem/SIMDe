@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2019 Evan Nemerson <evan@nemerson.com>
+/* SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -19,6 +19,9 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ * Copyright:
+ *   2017-2020 Evan Nemerson <evan@nemerson.com>
  */
 
 #if !defined(SIMDE_COMMON_H)
@@ -32,6 +35,7 @@
 #define SIMDE_VERSION HEDLEY_VERSION_ENCODE(SIMDE_VERSION_MAJOR, SIMDE_VERSION_MINOR, SIMDE_VERSION_MICRO)
 
 #include "simde-arch.h"
+#include "simde-features.h"
 
 #include <stddef.h>
 
@@ -153,7 +157,14 @@
    elem_size is in bits but vec_size is in bytes. */
 #  if !defined(SIMDE_NO_SHUFFLE_VECTOR) && defined(SIMDE_VECTOR_SUBSCRIPT)
 #    if HEDLEY_HAS_BUILTIN(__builtin_shufflevector)
+#      if HEDLEY_HAS_WARNING("-Wc++98-compat-pedantic")
+#        pragma clang diagnostic push
+#        pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+#      endif
 #      define SIMDE__SHUFFLE_VECTOR(elem_size, vec_size, a, b, ...) __builtin_shufflevector(a, b, __VA_ARGS__)
+#      if HEDLEY_HAS_WARNING("-Wc++98-compat-pedantic")
+#        pragma clang diagnostic pop
+#      endif
 #    elif HEDLEY_GCC_HAS_BUILTIN(__builtin_shuffle,4,7,0) && !defined(__INTEL_COMPILER)
 #      define SIMDE__SHUFFLE_VECTOR(elem_size, vec_size, a, b, ...) (__extension__ ({ \
          int##elem_size##_t SIMDE_VECTOR(vec_size) simde_shuffle_ = { __VA_ARGS__ }; \
@@ -213,7 +224,7 @@
 #  define SIMDE__VECTORIZE_SAFELEN(l) HEDLEY_PRAGMA(simd vectorlength(l))
 #  define SIMDE__VECTORIZE_REDUCTION(r) HEDLEY_PRAGMA(simd reduction(r))
 #  define SIMDE__VECTORIZE_ALIGNED(a) HEDLEY_PRAGMA(simd aligned(a))
-#elif defined(__clang__)
+#elif defined(__clang__) && !defined(HEDLEY_IBM_VERSION)
 #  define SIMDE__VECTORIZE _Pragma("clang loop vectorize(enable)")
 #  define SIMDE__VECTORIZE_SAFELEN(l) HEDLEY_PRAGMA(clang loop vectorize_width(l))
 #  define SIMDE__VECTORIZE_REDUCTION(r) SIMDE__VECTORIZE
@@ -308,7 +319,6 @@ HEDLEY_DIAGNOSTIC_POP
 #  define SIMDE_FLOAT32_C(value) ((SIMDE_FLOAT32_TYPE) value)
 #endif
 typedef SIMDE_FLOAT32_TYPE simde_float32;
-HEDLEY_STATIC_ASSERT(sizeof(simde_float32) == 4, "Unable to find 32-bit floating-point type.");
 
 #if !defined(SIMDE_FLOAT64_TYPE)
 #  define SIMDE_FLOAT64_TYPE double
@@ -317,7 +327,6 @@ HEDLEY_STATIC_ASSERT(sizeof(simde_float32) == 4, "Unable to find 32-bit floating
 #  define SIMDE_FLOAT32_C(value) ((SIMDE_FLOAT64_TYPE) value)
 #endif
 typedef SIMDE_FLOAT64_TYPE simde_float64;
-HEDLEY_STATIC_ASSERT(sizeof(simde_float64) == 8, "Unable to find 64-bit floating-point type.");
 
 /* Whether to assume that the compiler can auto-vectorize reasonably
    well.  This will cause SIMDe to attempt to compose vector
@@ -360,6 +369,36 @@ HEDLEY_STATIC_ASSERT(sizeof(simde_float64) == 8, "Unable to find 64-bit floating
 #  define SIMDE_CONVERT_FTOI(T,v) ((T) (v))
 #endif
 
+#if \
+    !defined(__cplusplus) && ( \
+      HEDLEY_HAS_BUILTIN(__builtin_types_compatible_p) || \
+      HEDLEY_GCC_VERSION_CHECK(3,4,0) || \
+      HEDLEY_ARM_VERSION_CHECK(5,0,4) || \
+      HEDLEY_CRAY_VERSION_CHECK(8,1,0) || \
+      HEDLEY_INTEL_VERSION_CHECK(13,0,0) || \
+      HEDLEY_IBM_VERSION_CHECK(16,1,0) \
+    )
+  #define SIMDE_CHECKED_REINTERPRET_CAST(to, from, value) \
+    (__extension__({ \
+      HEDLEY_STATIC_ASSERT(__builtin_types_compatible_p(from, __typeof__(value)) || \
+        __builtin_types_compatible_p(to, __typeof__(value)), \
+        "Type of `" #value "` must be either `" #to "` or `" #from "`"); \
+      HEDLEY_REINTERPRET_CAST(to, value); \
+    }))
+  #define SIMDE_CHECKED_STATIC_CAST(to, from, value) \
+    (__extension__({ \
+      HEDLEY_STATIC_ASSERT(__builtin_types_compatible_p(from, __typeof__(value)) || \
+        __builtin_types_compatible_p(to, __typeof__(value)), \
+        "Type of `" #value "` must be either `" #to "` or `" #from "`"); \
+      HEDLEY_STATIC_CAST(to, value); \
+    }))
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+  #define SIMDE_CHECKED_REINTERPRET_CAST(to, from, value) (_Generic((value), to: (value), from: ((to) (value))))
+  #define SIMDE_CHECKED_STATIC_CAST(to, from, value) (_Generic((value), to: (value), from: ((to) (value))))
+#else
+  #define SIMDE_CHECKED_REINTERPRET_CAST(to, from, value) HEDLEY_REINTERPRET_CAST(to, value)
+  #define SIMDE_CHECKED_STATIC_CAST(to, from, value) HEDLEY_STATIC_CAST(to, value)
+#endif
 
 #if HEDLEY_HAS_WARNING("-Wfloat-equal")
 #  define SIMDE_DIAGNOSTIC_DISABLE_FLOAT_EQUAL _Pragma("clang diagnostic ignored \"-Wfloat-equal\"")
@@ -369,11 +408,14 @@ HEDLEY_STATIC_ASSERT(sizeof(simde_float64) == 8, "Unable to find 64-bit floating
 #  define SIMDE_DIAGNOSTIC_DISABLE_FLOAT_EQUAL
 #endif
 
-/* Some algorithms are iterative, and fewer iterations means less
-   accuracy.  Lower values here will result in faster, but less
-   accurate, calculations for some functions. */
-#if !defined(SIMDE_ACCURACY_ITERS)
-#  define SIMDE_ACCURACY_ITERS 2
+/* Some functions can trade accuracy for speed.  For those functions
+   you can control the trade-off using this macro.  Possible values:
+
+   0: prefer speed
+   1: reasonable trade-offs
+   2: prefer accuracy */
+#if !defined(SIMDE_ACCURACY_PREFERENCE)
+#  define SIMDE_ACCURACY_PREFERENCE 1
 #endif
 
 #if defined(SIMDE__ASSUME_ALIGNED)
@@ -421,7 +463,7 @@ HEDLEY_STATIC_ASSERT(sizeof(simde_float64) == 8, "Unable to find 64-bit floating
 #  define SIMDE_DIAGNOSTIC_DISABLE_UNINITIALIZED_ __pragma(warning(disable:4700))
 #endif
 
-#if HEDLEY_GCC_VERSION_CHECK(8,0,0)
+#if HEDLEY_GCC_VERSION_CHECK(7,0,0)
 #  define SIMDE_DIAGNOSTIC_DISABLE_PSABI_ _Pragma("GCC diagnostic ignored \"-Wpsabi\"")
 #else
 #  define SIMDE_DIAGNOSTIC_DISABLE_PSABI_
@@ -496,13 +538,69 @@ HEDLEY_STATIC_ASSERT(sizeof(simde_float64) == 8, "Unable to find 64-bit floating
 #  define SIMDE_DIAGNOSTIC_DISABLE_CAST_ALIGN_
 #endif
 
+#if HEDLEY_HAS_WARNING("-Wextra-semi")
+#  define SIMDE_DIAGNOSTIC_DISABLE_EXTRA_SEMI_ _Pragma("clang diagnostic ignored \"-Wextra-semi\"")
+#elif HEDLEY_GCC_VERSION_CHECK(8,1,0) && defined(__cplusplus)
+#  define SIMDE_DIAGNOSTIC_DISABLE_EXTRA_SEMI_ _Pragma("GCC diagnostic ignored \"-Wextra-semi\"")
+#else
+#  define SIMDE_DIAGNOSTIC_DISABLE_EXTRA_SEMI_
+#endif
+
+#if HEDLEY_HAS_WARNING("-Wdouble-promotion")
+#  define SIMDE_DIAGNOSTIC_DISABLE_DOUBLE_PROMOTION_ _Pragma("clang diagnostic ignored \"-Wdouble-promotion\"")
+#else
+#  define SIMDE_DIAGNOSTIC_DISABLE_DOUBLE_PROMOTION_
+#endif
+
+/* Several compilers treat conformant array parameters as VLAs. */
+#if HEDLEY_HAS_WARNING("-Wvla")
+#  define SIMDE_DIAGNOSTIC_DISABLE_VLA_ _Pragma("clang diagnostic ignored \"-Wvla\"")
+#elif HEDLEY_GCC_VERSION_CHECK(4,3,0)
+#  define SIMDE_DIAGNOSTIC_DISABLE_VLA_ _Pragma("GCC diagnostic ignored \"-Wvla\"")
+#else
+#  define SIMDE_DIAGNOSTIC_DISABLE_VLA_
+#endif
+
+#if HEDLEY_HAS_WARNING("-Wvla")
+#  define SIMDE_DIAGNOSTIC_DISABLE_VLA_ _Pragma("clang diagnostic ignored \"-Wvla\"")
+#elif HEDLEY_GCC_VERSION_CHECK(4,3,0)
+#  define SIMDE_DIAGNOSTIC_DISABLE_VLA_ _Pragma("GCC diagnostic ignored \"-Wvla\"")
+#else
+#  define SIMDE_DIAGNOSTIC_DISABLE_VLA_
+#endif
+
+#if HEDLEY_HAS_WARNING("-Wused-but-marked-unused")
+#  define SIMDE_DIAGNOSTIC_DISABLE_USED_BUT_MARKED_UNUSED_ _Pragma("clang diagnostic ignored \"-Wused-but-marked-unused\"")
+#else
+#  define SIMDE_DIAGNOSTIC_DISABLE_USED_BUT_MARKED_UNUSED_
+#endif
+
+#if HEDLEY_HAS_WARNING("-Wunused-function")
+#  define SIMDE_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION_ _Pragma("clang diagnostic ignored \"-Wunused-function\"")
+#elif HEDLEY_GCC_VERSION_CHECK(3,4,0)
+#  define SIMDE_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION_ _Pragma("GCC diagnostic ignored \"-Wunused-function\"")
+#else
+#  define SIMDE_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION_
+#endif
+
+#if HEDLEY_HAS_WARNING("-Wpass-failed")
+#  define SIMDE_DIAGNOSTIC_DISABLE_PASS_FAILED_ _Pragma("clang diagnostic ignored \"-Wpass-failed\"")
+#else
+#  define SIMDE_DIAGNOSTIC_DISABLE_PASS_FAILED_
+#endif
+
 #define SIMDE_DISABLE_UNWANTED_DIAGNOSTICS \
   SIMDE_DIAGNOSTIC_DISABLE_PSABI_ \
   SIMDE_DIAGNOSTIC_DISABLE_NO_EMMS_INSTRUCTION_ \
   SIMDE_DIAGNOSTIC_DISABLE_SIMD_PRAGMA_DEPRECATED_ \
   SIMDE_DIAGNOSTIC_DISABLE_CONDITIONAL_UNINITIALIZED_ \
   SIMDE_DIAGNOSTIC_DISABLE_FLOAT_EQUAL_ \
-  SIMDE_DIAGNOSTIC_DISABLE_NON_CONSTANT_AGGREGATE_INITIALIZER_
+  SIMDE_DIAGNOSTIC_DISABLE_NON_CONSTANT_AGGREGATE_INITIALIZER_ \
+  SIMDE_DIAGNOSTIC_DISABLE_EXTRA_SEMI_ \
+  SIMDE_DIAGNOSTIC_DISABLE_VLA_ \
+  SIMDE_DIAGNOSTIC_DISABLE_USED_BUT_MARKED_UNUSED_ \
+  SIMDE_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION_ \
+  SIMDE_DIAGNOSTIC_DISABLE_PASS_FAILED_
 
 #if defined(__STDC_HOSTED__)
 #  define SIMDE_STDC_HOSTED __STDC_HOSTED__

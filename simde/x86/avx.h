@@ -1,4 +1,6 @@
-/* Permission is hereby granted, free of charge, to any person
+/* SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
  * restriction, including without limitation the rights to use, copy,
@@ -19,30 +21,16 @@
  * SOFTWARE.
  *
  * Copyright:
- *   2018      Evan Nemerson <evan@nemerson.com>
+ *   2018-2020 Evan Nemerson <evan@nemerson.com>
  */
 
-#include "sse.h"
-#include "sse2.h"
-#if !defined(SIMDE__AVX_H)
-#  if !defined(SIMDE__AVX_H)
-#    define SIMDE__AVX_H
-#  endif
-#  include "sse4.1.h"
+#if !defined(SIMDE_AVX_H)
+#define SIMDE_AVX_H
+
+#include "sse4.2.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
-
-#  if defined(SIMDE_AVX_NATIVE)
-#    undef SIMDE_AVX_NATIVE
-#  endif
-#  if defined(SIMDE_ARCH_X86_AVX) && !defined(SIMDE_AVX_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
-#    define SIMDE_AVX_NATIVE
-#  elif defined(SIMDE_ARCH_ARM_NEON) && !defined(SIMDE_AVX_NO_NEON) && !defined(SIMDE_NO_NEON)
-#    define SIMDE_AVX_NEON
-#  elif defined(SIMDE_ARCH_POWER_ALTIVEC)
-#    define SIMDE_AVX_POWER_ALTIVEC
-#  endif
 
 #  if defined(SIMDE_AVX_NATIVE)
 #    include <immintrin.h>
@@ -1490,7 +1478,7 @@ simde_mm256_broadcast_ps (simde__m128 const * mem_addr) {
 #endif
 }
 #if defined(SIMDE_AVX_ENABLE_NATIVE_ALIASES)
-#  define _mm256_broadcast_ps(mem_addr) simde_mm256_broadcast_ps(HEDLEY_REINTERPRET_CAST(float const*, mem_addr))
+#  define _mm256_broadcast_ps(mem_addr) simde_mm256_broadcast_ps(HEDLEY_REINTERPRET_CAST(simde__m128 const*, mem_addr))
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -2772,7 +2760,7 @@ simde_mm256_cvtps_pd (simde__m128 a) {
 
   SIMDE__VECTORIZE
   for (size_t i = 0 ; i < (sizeof(a_.f32) / sizeof(a_.f32[0])) ; i++) {
-    r_.f64[i] = a_.f32[i];
+    r_.f64[i] = HEDLEY_STATIC_CAST(double, a_.f32[i]);
   }
 
   return simde__m256d_from_private(r_);
@@ -2819,7 +2807,7 @@ simde_mm256_cvttps_epi32 (simde__m256 a) {
 #if defined(SIMDE_HAVE_MATH_H)
   SIMDE__VECTORIZE
   for (size_t i = 0 ; i < (sizeof(a_.f32) / sizeof(a_.f32[0])) ; i++) {
-    r_.i32[i] = SIMDE_CONVERT_FTOI(int32_t, trunc(a_.f32[i]));
+    r_.i32[i] = SIMDE_CONVERT_FTOI(int32_t, truncf(a_.f32[i]));
   }
 #else
   HEDLEY_UNREACHABLE();
@@ -4315,7 +4303,7 @@ simde_mm256_setr_epi32 (
 
 SIMDE__FUNCTION_ATTRIBUTES
 simde__m256i
-simde_mm256_setr_epi64 (int64_t  e3, int64_t  e2, int64_t  e1, int64_t  e0) {
+simde_mm256_setr_epi64x (int64_t  e3, int64_t  e2, int64_t  e1, int64_t  e0) {
 #if defined(SIMDE_AVX_NATIVE)
   return _mm256_setr_epi64x(e3, e2, e1, e0);
 #else
@@ -4323,8 +4311,8 @@ simde_mm256_setr_epi64 (int64_t  e3, int64_t  e2, int64_t  e1, int64_t  e0) {
 #endif
 }
 #if defined(SIMDE_AVX_ENABLE_NATIVE_ALIASES)
-#  define _mm256_setr_epi64(e3, e2, e1, e0) \
-    simde_mm256_setr_epi64(e3, e2, e1, e0)
+#  define _mm256_setr_epi64x(e3, e2, e1, e0) \
+    simde_mm256_setr_epi64x(e3, e2, e1, e0)
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -4737,7 +4725,7 @@ simde_mm256_undefined_ps (void) {
     (!defined(__has_builtin) || HEDLEY_HAS_BUILTIN(__builtin_ia32_undef256))
   r_.n = _mm256_undefined_ps();
 #elif !defined(SIMDE_DIAGNOSTIC_DISABLE_UNINITIALIZED_)
-  r_ = simde_mm256_setzero_ps();
+  r_ = simde__m256_to_private(simde_mm256_setzero_ps());
 #endif
 
   return simde__m256_from_private(r_);
@@ -4757,7 +4745,7 @@ simde_mm256_undefined_pd (void) {
     (!defined(__has_builtin) || HEDLEY_HAS_BUILTIN(__builtin_ia32_undef256))
   r_.n = _mm256_undefined_pd();
 #elif !defined(SIMDE_DIAGNOSTIC_DISABLE_UNINITIALIZED_)
-  r_ = simde_mm256_setzero_pd();
+  r_ = simde__m256d_to_private(simde_mm256_setzero_pd());
 #endif
 
   return simde__m256d_from_private(r_);
@@ -4776,7 +4764,7 @@ simde_mm256_undefined_si256 (void) {
     (!defined(__has_builtin) || HEDLEY_HAS_BUILTIN(__builtin_ia32_undef256))
   r_.n = _mm256_undefined_si256();
 #elif !defined(SIMDE_DIAGNOSTIC_DISABLE_UNINITIALIZED_)
-  r_ = simde_mm256_setzero_si256();
+  r_ = simde__m256i_to_private(simde_mm256_setzero_si256());
 #endif
 
   return simde__m256i_from_private(r_);
@@ -5382,4 +5370,4 @@ SIMDE__END_DECLS
 
 HEDLEY_DIAGNOSTIC_POP
 
-#endif /* !defined(SIMDE__AVX_H) */
+#endif /* !defined(SIMDE_AVX_H) */

@@ -1,4 +1,6 @@
-/* Permission is hereby granted, free of charge, to any person
+/* SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
  * restriction, including without limitation the rights to use, copy,
@@ -25,27 +27,13 @@
  *   2015      Ken Fast <kfast@gdeb.com>
  */
 
-#if !defined(SIMDE__SSE_H)
-#  if !defined(SIMDE__SSE_H)
-#    define SIMDE__SSE_H
-#  endif
-#  include "mmx.h"
+#if !defined(SIMDE_SSE_H)
+#define SIMDE_SSE_H
+
+#include "mmx.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
-
-#  if defined(SIMDE_SSE_NATIVE)
-#    undef SIMDE_SSE_NATIVE
-#  endif
-#  if defined(SIMDE_ARCH_X86_SSE) && !defined(SIMDE_SSE_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
-#    define SIMDE_SSE_NATIVE
-#  elif defined(SIMDE_ARCH_ARM_NEON) && !defined(SIMDE_SSE_NO_NEON) && !defined(SIMDE_NO_NEON)
-#    define SIMDE_SSE_NEON
-#  elif defined(SIMDE_ARCH_WASM_SIMD128)
-#    define SIMDE_SSE_WASM_SIMD128
-#  elif defined(SIMDE_ARCH_POWER_ALTIVEC)
-#    define SIMDE_SSE_POWER_ALTIVEC
-#  endif
 
 #  if defined(SIMDE_SSE_NATIVE)
 #    include <xmmintrin.h>
@@ -776,7 +764,7 @@ simde_mm_cmpneq_ps (simde__m128 a, simde__m128 b) {
     r_.neon_u32 = vmvnq_u32(vceqq_f32(a_.neon_f32, b_.neon_f32));
   #elif defined(SIMDE_SSE_WASM_SIMD128)
     r_.wasm_v128 = wasm_f32x4_ne(a_.wasm_v128, b_.wasm_v128);
-  #elif defined(SIMDE_SSE_POWER_ALTIVEC) && (SIMDE_ARCH_POWER >= 900) && !defined(HEDLEY_IBM_VERSION)
+  #elif defined(SIMDE_SSE_POWER_ALTIVEC) && SIMDE_ARCH_POWER_CHECK(900) && !defined(HEDLEY_IBM_VERSION)
     /* vec_cmpne(vector float, vector float) is missing from XL C/C++ v16.1.1,
        though the documentation (table 89 on page 432 of the IBM XL C/C++ for
        Linux Compiler Reference, Version 16.1.1) shows that it should be
@@ -2080,7 +2068,7 @@ simde_mm_maskmove_si64 (simde__m64 a, simde__m64 mask, int8_t* mem_addr) {
 }
 #define simde_m_maskmovq(a, mask, mem_addr) simde_mm_maskmove_si64(a, mask, mem_addr)
 #if defined(SIMDE_SSE_ENABLE_NATIVE_ALIASES)
-#  define _mm_maskmove_si64(a, mask, mem_addr) simde_mm_maskmove_si64(a, (mask), mem_addr)
+#  define _mm_maskmove_si64(a, mask, mem_addr) simde_mm_maskmove_si64((a), SIMDE_CHECKED_REINTERPRET_CAST(int8_t*, char*, mask), (mem_addr))
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -2541,36 +2529,34 @@ simde_mm_prefetch (char const* p, int i) {
 SIMDE__FUNCTION_ATTRIBUTES
 simde__m128
 simde_mm_rcp_ps (simde__m128 a) {
-#if defined(SIMDE_SSE_NATIVE)
-  return _mm_rcp_ps(a);
-#else
-  simde__m128_private
-    r_,
-    a_ = simde__m128_to_private(a);
+  #if defined(SIMDE_SSE_NATIVE)
+    return _mm_rcp_ps(a);
+  #else
+    simde__m128_private
+      r_,
+      a_ = simde__m128_to_private(a);
 
-#if defined(SIMDE_SSE_NEON)
-  float32x4_t recip = vrecpeq_f32(a_.neon_f32);
+    #if defined(SIMDE_SSE_NEON)
+      float32x4_t recip = vrecpeq_f32(a_.neon_f32);
 
-#  if !defined(SIMDE_MM_RCP_PS_ITERS)
-#    define SIMDE_MM_RCP_PS_ITERS SIMDE_ACCURACY_ITERS
-#  endif
+      #if SIMDE_ACCURACY_PREFERENCE > 0
+        for (int i = 0; i < SIMDE_ACCURACY_PREFERENCE ; ++i) {
+          recip = vmulq_f32(recip, vrecpsq_f32(recip, a_.neon_f32));
+        }
+      #endif
 
-  for (int i = 0; i < SIMDE_MM_RCP_PS_ITERS ; ++i) {
-    recip = vmulq_f32(recip, vrecpsq_f32(recip, a_.neon_f32));
-  }
+      r_.neon_f32 = recip;
+    #elif defined(SIMDE_VECTOR_SUBSCRIPT_SCALAR)
+      r_.f32 = 1.0f / a_.f32;
+    #else
+      SIMDE__VECTORIZE
+      for (size_t i = 0 ; i < (sizeof(r_.f32) / sizeof(r_.f32[0])) ; i++) {
+        r_.f32[i] = 1.0f / a_.f32[i];
+      }
+    #endif
 
-  r_.neon_f32 = recip;
-#elif defined(SIMDE_VECTOR_SUBSCRIPT_SCALAR)
-  r_.f32 = 1.0f / a_.f32;
-#else
-  SIMDE__VECTORIZE
-  for (size_t i = 0 ; i < (sizeof(r_.f32) / sizeof(r_.f32[0])) ; i++) {
-    r_.f32[i] = 1.0f / a_.f32[i];
-  }
-#endif
-
-  return simde__m128_from_private(r_);
-#endif
+    return simde__m128_from_private(r_);
+  #endif
 }
 #if defined(SIMDE_SSE_ENABLE_NATIVE_ALIASES)
 #  define _mm_rcp_ps(a) simde_mm_rcp_ps((a))
@@ -2613,16 +2599,34 @@ simde_mm_rsqrt_ps (simde__m128 a) {
 #if defined(SIMDE_SSE_NEON)
   r_.neon_f32 = vrsqrteq_f32(a_.neon_f32);
 #elif defined(__STDC_IEC_559__)
-  /* http://h14s.p5r.org/2012/09/0x5f3759df.html?mwh=1 */
+  /* https://basesandframes.files.wordpress.com/2020/04/even_faster_math_functions_green_2020.pdf
+     Pages 100 - 103 */
   SIMDE__VECTORIZE
   for (size_t i = 0 ; i < (sizeof(r_.f32) / sizeof(r_.f32[0])) ; i++) {
-    r_.i32[i]  = INT32_C(0x5f3759df) - (a_.i32[i] >> 1);
+    #if SIMDE_ACCURACY_PREFERENCE <= 0
+      r_.i32[i] = INT32_C(0x5F37624F) - (a_.i32[i] >> 1);
+    #else
+      simde_float32 x = a_.f32[i];
+      simde_float32 xhalf = SIMDE_FLOAT32_C(0.5) * x;
+      int32_t ix;
 
-#if SIMDE_ACCURACY_ITERS > 2
-    const float half = SIMDE_FLOAT32_C(0.5) * a_.f32[i];
-    for (int ai = 2 ; ai < SIMDE_ACCURACY_ITERS ; ai++)
-      r_.f32[i] *= SIMDE_FLOAT32_C(1.5) - (half * r_.f32[i] * r_.f32[i]);
-#endif
+      simde_memcpy(&ix, &x, sizeof(ix));
+
+      #if SIMDE_ACCURACY_PREFERENCE == 1
+        ix = INT32_C(0x5F375A82) - (ix >> 1);
+      #else
+        ix = INT32_C(0x5F37599E) - (ix >> 1);
+      #endif
+
+      simde_memcpy(&x, &ix, sizeof(x));
+
+      #if SIMDE_ACCURACY_PREFERENCE >= 2
+        x = x * (SIMDE_FLOAT32_C(1.5008909) - xhalf * x * x);
+      #endif
+      x = x * (SIMDE_FLOAT32_C(1.5008909) - xhalf * x * x);
+
+      r_.f32[i] = x;
+    #endif
   }
 #elif defined(SIMDE_HAVE_MATH_H)
   SIMDE__VECTORIZE
@@ -2654,15 +2658,31 @@ simde_mm_rsqrt_ss (simde__m128 a) {
 
 #if defined(__STDC_IEC_559__)
   {
-    r_.i32[0]  = INT32_C(0x5f3759df) - (a_.i32[0] >> 1);
+    #if SIMDE_ACCURACY_PREFERENCE <= 0
+      r_.i32[0] = INT32_C(0x5F37624F) - (a_.i32[0] >> 1);
+    #else
+      simde_float32 x = a_.f32[0];
+      simde_float32 xhalf = SIMDE_FLOAT32_C(0.5) * x;
+      int32_t ix;
 
-#if SIMDE_ACCURACY_ITERS > 2
-    float half = SIMDE_FLOAT32_C(0.5) * a_.f32[0];
-    for (int ai = 2 ; ai < SIMDE_ACCURACY_ITERS ; ai++)
-      r_.f32[0] *= SIMDE_FLOAT32_C(1.5) - (half * r_.f32[0] * r_.f32[0]);
-#endif
+      simde_memcpy(&ix, &x, sizeof(ix));
+
+      #if SIMDE_ACCURACY_PREFERENCE == 1
+        ix = INT32_C(0x5F375A82) - (ix >> 1);
+      #else
+        ix = INT32_C(0x5F37599E) - (ix >> 1);
+      #endif
+
+      simde_memcpy(&x, &ix, sizeof(x));
+
+      #if SIMDE_ACCURACY_PREFERENCE >= 2
+        x = x * (SIMDE_FLOAT32_C(1.5008909) - xhalf * x * x);
+      #endif
+      x = x * (SIMDE_FLOAT32_C(1.5008909) - xhalf * x * x);
+
+      r_.f32[0] = x;
+    #endif
   }
-  r_.f32[0] = 1.0f / sqrtf(a_.f32[0]);
   r_.f32[1] = a_.f32[1];
   r_.f32[2] = a_.f32[2];
   r_.f32[3] = a_.f32[3];
@@ -2991,7 +3011,7 @@ simde_mm_store_ps (simde_float32 mem_addr[4], simde__m128 a) {
 #endif
 }
 #if defined(SIMDE_SSE_ENABLE_NATIVE_ALIASES)
-#  define _mm_store_ps(mem_addr, a) simde_mm_store_ps(HEDLEY_REINTERPRET_CAST(float*, mem_addr), (a))
+#  define _mm_store_ps(mem_addr, a) simde_mm_store_ps(SIMDE_CHECKED_REINTERPRET_CAST(float*, simde_float32*, mem_addr), (a))
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -3011,7 +3031,7 @@ simde_mm_store_ps1 (simde_float32 mem_addr[4], simde__m128 a) {
 #endif
 }
 #if defined(SIMDE_SSE_ENABLE_NATIVE_ALIASES)
-#  define _mm_store_ps1(mem_addr, a) simde_mm_store_ps1(HEDLEY_REINTERPRET_CAST(float*, mem_addr), (a))
+#  define _mm_store_ps1(mem_addr, a) simde_mm_store_ps1(SIMDE_CHECKED_REINTERPRET_CAST(float*, simde_float32*, mem_addr), (a))
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -3030,7 +3050,7 @@ simde_mm_store_ss (simde_float32* mem_addr, simde__m128 a) {
 #endif
 }
 #if defined(SIMDE_SSE_ENABLE_NATIVE_ALIASES)
-#  define _mm_store_ss(mem_addr, a) simde_mm_store_ss(HEDLEY_REINTERPRET_CAST(float*, mem_addr), (a))
+#  define _mm_store_ss(mem_addr, a) simde_mm_store_ss(SIMDE_CHECKED_REINTERPRET_CAST(float*, simde_float32*, mem_addr), (a))
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -3045,7 +3065,7 @@ simde_mm_store1_ps (simde_float32 mem_addr[4], simde__m128 a) {
 #endif
 }
 #if defined(SIMDE_SSE_ENABLE_NATIVE_ALIASES)
-#  define _mm_store1_ps(mem_addr, a) simde_mm_store1_ps(HEDLEY_REINTERPRET_CAST(float*, mem_addr), (a))
+#  define _mm_store1_ps(mem_addr, a) simde_mm_store1_ps(SIMDE_CHECKED_REINTERPRET_CAST(float*, simde_float32*, mem_addr), (a))
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -3104,7 +3124,7 @@ simde_mm_storer_ps (simde_float32 mem_addr[4], simde__m128 a) {
 #endif
 }
 #if defined(SIMDE_SSE_ENABLE_NATIVE_ALIASES)
-#  define _mm_storer_ps(mem_addr, a) simde_mm_storer_ps(HEDLEY_REINTERPRET_CAST(float*, mem_addr), (a))
+#  define _mm_storer_ps(mem_addr, a) simde_mm_storer_ps(SIMDE_CHECKED_REINTERPRET_CAST(float*, simde_float32*, mem_addr), (a))
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -3123,7 +3143,7 @@ simde_mm_storeu_ps (simde_float32 mem_addr[4], simde__m128 a) {
 #endif
 }
 #if defined(SIMDE_SSE_ENABLE_NATIVE_ALIASES)
-#  define _mm_storeu_ps(mem_addr, a) simde_mm_storeu_ps(HEDLEY_REINTERPRET_CAST(float*, mem_addr), (a))
+#  define _mm_storeu_ps(mem_addr, a) simde_mm_storeu_ps(SIMDE_CHECKED_REINTERPRET_CAST(float*, simde_float32*, mem_addr), (a))
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -3498,7 +3518,7 @@ simde_mm_stream_ps (simde_float32 mem_addr[4], simde__m128 a) {
 #endif
 }
 #if defined(SIMDE_SSE_ENABLE_NATIVE_ALIASES)
-#  define _mm_stream_ps(mem_addr, a) simde_mm_stream_ps(HEDLEY_REINTERPRET_CAST(float*, mem_addr), (a))
+#  define _mm_stream_ps(mem_addr, a) simde_mm_stream_ps(SIMDE_CHECKED_REINTERPRET_CAST(float*, simde_float32*, mem_addr), (a))
 #endif
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -3693,4 +3713,4 @@ SIMDE__END_DECLS
 
 HEDLEY_DIAGNOSTIC_POP
 
-#endif /* !defined(SIMDE__SSE_H) */
+#endif /* !defined(SIMDE_SSE_H) */

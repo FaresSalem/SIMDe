@@ -1,4 +1,4 @@
-/* Copyright (c) 2017 Evan Nemerson <evan@nemerson.com>
+/* SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -19,27 +19,18 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ * Copyright:
+ *   2017      Evan Nemerson <evan@nemerson.com>
  */
 
-#if !defined(SIMDE__SSE4_2_H)
-#  if !defined(SIMDE__SSE4_2_H)
-#    define SIMDE__SSE4_2_H
-#  endif
-#  include "sse4.1.h"
+#if !defined(SIMDE_SSE4_2_H)
+#define SIMDE_SSE4_2_H
+
+#include "sse4.1.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
-
-#  if defined(SIMDE_SSE4_2_NATIVE)
-#    undef SIMDE_SSE4_2_NATIVE
-#  endif
-#  if defined(SIMDE_ARCH_X86_SSE4_2) && !defined(SIMDE_SSE4_2_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
-#    define SIMDE_SSE4_2_NATIVE
-#  elif defined(SIMDE_ARCH_ARM_NEON) && !defined(SIMDE_SSE4_2_NO_NEON) && !defined(SIMDE_NO_NEON)
-#    define SIMDE_SSE4_2_NEON
-#  elif defined(SIMDE_ARCH_POWER_ALTIVEC)
-#    define SIMDE_SSE4_2_POWER_ALTIVEC
-#  endif
 
 #  if defined(SIMDE_SSE4_2_NATIVE) && !defined(SIMDE_SSE4_1_NATIVE)
 #    if defined(SIMDE_SSE4_2_FORCE_NATIVE)
@@ -102,4 +93,4 @@ SIMDE__END_DECLS
 
 HEDLEY_DIAGNOSTIC_POP
 
-#endif /* !defined(SIMDE__SSE4_2_H) */
+#endif /* !defined(SIMDE_SSE4_2_H) */

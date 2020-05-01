@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2020 Evan Nemerson <evan@nemerson.com>
+/* SPDX-License-Identifier: MIT
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -19,40 +19,33 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ * Copyright:
+ *   2017-2020 Evan Nemerson <evan@nemerson.com>
  */
 
-#if !defined(SIMDE__MMX_H)
-#  if !defined(SIMDE__MMX_H)
-#    define SIMDE__MMX_H
-#  endif
-#  include "../simde-common.h"
+#if !defined(SIMDE_MMX_H)
+#define SIMDE_MMX_H
+
+#include "../simde-common.h"
 
 HEDLEY_DIAGNOSTIC_PUSH
 SIMDE_DISABLE_UNWANTED_DIAGNOSTICS
 
-#  if defined(SIMDE_MMX_FORCE_NATIVE)
-#    define SIMDE_MMX_NATIVE
-#  elif defined(SIMDE_ARCH_X86_MMX) && !defined(SIMDE_MMX_NO_NATIVE) && !defined(SIMDE_NO_NATIVE)
-#    define SIMDE_MMX_NATIVE
-#  elif defined(SIMDE_ARCH_ARM_NEON) && !defined(SIMDE_MMX_NO_NEON) && !defined(SIMDE_NO_NEON)
-#    define SIMDE_MMX_NEON
-#  endif
+#if defined(SIMDE_MMX_NATIVE)
+  #define SIMDE_MMX_USE_NATIVE_TYPE
+#elif defined(SIMDE_ARCH_X86_SSE)
+  #define SIMDE_MMX_USE_NATIVE_TYPE
+#endif
 
-#  if defined(SIMDE_MMX_NATIVE)
-#    define SIMDE_MMX_USE_NATIVE_TYPE
-#  elif defined(SIMDE_ARCH_X86_SSE)
-#    define SIMDE_MMX_USE_NATIVE_TYPE
-#  endif
+#if defined(SIMDE_MMX_USE_NATIVE_TYPE)
+  #include <mmintrin.h>
+#elif defined(SIMDE_MMX_NEON)
+  #include <arm_neon.h>
+#endif
 
-#  if defined(SIMDE_MMX_USE_NATIVE_TYPE)
-#    include <mmintrin.h>
-#  else
-#    if defined(SIMDE_MMX_NEON)
-#      include <arm_neon.h>
-#    endif
-#  endif
-#  include <stdint.h>
-#  include <limits.h>
+#include <stdint.h>
+#include <limits.h>
 
 SIMDE__BEGIN_DECLS
 
@@ -1243,14 +1236,7 @@ simde_mm_setzero_si64 (void) {
 SIMDE__FUNCTION_ATTRIBUTES
 simde__m64
 simde_mm_setone_si64 (void) {
-#if defined(SIMDE_SSE_NATIVE)
-  __m64 t = _mm_undefined_ps();
-  return _mm_andnot_ps(t, t);
-#else
-  simde__m64 r;
-  simde_memset(&r, ~0, sizeof(r));
-  return r;
-#endif
+  return simde_mm_set1_pi32(~INT32_C(0));
 }
 
 SIMDE__FUNCTION_ATTRIBUTES
@@ -2207,4 +2193,4 @@ SIMDE__END_DECLS
 
 HEDLEY_DIAGNOSTIC_POP
 
-#endif /* !defined(SIMDE__MMX_H) */
+#endif /* !defined(SIMDE_MMX_H) */

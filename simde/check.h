@@ -6,6 +6,8 @@
  *   copyright and related or neighboring rights to this code.  For
  *   details, see the Creative Commons Zero 1.0 Universal license at
  *   https://creativecommons.org/publicdomain/zero/1.0/
+ *
+ * SPDX-License-Identifier: CC0-1.0
  */
 
 #if !defined(SIMDE_CHECK_H)
@@ -56,10 +58,17 @@
 
 #  include "debug-trap.h"
 
+#  if HEDLEY_HAS_WARNING("-Wc++98-compat-pedantic")
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+#  endif
 #  if defined(EOF)
 #    define simde_errorf(format, ...) (fprintf(stderr, format, __VA_ARGS__), abort())
 #  else
 #    define simde_errorf(format, ...) (simde_trap())
+#  endif
+#  if HEDLEY_HAS_WARNING("-Wc++98-compat-pedantic")
+#    pragma clang diagnostic pop
 #  endif
 #endif
 
